@@ -6,6 +6,7 @@ import {check, validationResult} from 'express-validator'; // validation middlew
 import FilmDao from "./dao-films.mjs"; // module for accessing the films table in the DB
 import Film from "./Film.mjs";
 import UserDao from "./dao-users.mjs";
+import pool from './db.mjs';
 
 const filmDao = new FilmDao();
 const userDao = new UserDao();
@@ -34,16 +35,20 @@ const allowedOrigins = [
 
   app.options("*", cors());
 
+  app.set('trust proxy', 1);
+
 /** Creating the session */
 import session from 'express-session';
 
 app.use(session({
-    secret: "This is a very secret information used to initialize the session!",
+    secret: process.env.SESSION_SECRET || "supersecret",
     resave: false,
     saveUninitialized: false,
     cookie: {
-      sameSite: "none",
-      secure: true
+      httpOnly: true,
+      secure: true,
+      sameSite: 'none',
+      maxAge: 24*60*60*1000
     }
   }));
 
@@ -52,6 +57,10 @@ app.use(session({
 /** Authentication-related imports **/
 import passport from 'passport';                              // authentication middleware
 import LocalStrategy from 'passport-local';                   // authentication strategy (username and password)
+
+// --- Passport initialization ---
+app.use(passport.initialize());
+app.use(passport.session());
 
 /** Set up authentication strategy to search in the DB a user with a matching password.
  * The user object will contain other information extracted by the method userDao.getUserByCredentials() (i.e., id, username, name).
@@ -109,6 +118,16 @@ const filmValidation = [
 
 
 /*** Users APIs ***/
+
+app.get("/api/testdb", async (req, res) => {
+    try {
+      const result = await pool.query("SELECT NOW()");
+      res.json(result.rows);
+    } catch (err) {
+      console.error(err);
+      res.status(500).json(err);
+    }
+  });
 
 // POST /api/sessions
 // This route is used for performing login.

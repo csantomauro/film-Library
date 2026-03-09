@@ -1,131 +1,123 @@
-/* Data Access Object (DAO) module for accessing films data */
-
 import dayjs from "dayjs";
-import db from "./db.mjs";
+import pool from "./db.mjs";
 import Film from "./Film.mjs";
 
-
 const filters = {
-    'filter-favorite': {label: 'Favorites', filterFunction: film => film.favorite},
-    'filter-best': {label: 'Best Rated', filterFunction: film => film.rating >= 5},
-    'filter-lastmonth': {label: 'Seen Last Month', filterFunction: film => isSeenLastMonth(film)},
-    'filter-unseen': {label: 'Unseen', filterFunction: film => !film.watchDate}
+  'filter-favorite': {label: 'Favorites', filterFunction: film => film.favorite},
+  'filter-best': {label: 'Best Rated', filterFunction: film => film.rating >= 5},
+  'filter-lastmonth': {label: 'Seen Last Month', filterFunction: film => isSeenLastMonth(film)},
+  'filter-unseen': {label: 'Unseen', filterFunction: film => !film.watchDate}
 };
 
 const isSeenLastMonth = (film) => {
-    if ('watchDate' in film && film.watchDate) {  // Accessing watchDate only if defined
-        const diff = film.watchDate.diff(dayjs(), 'month');
-        const isLastMonth = diff <= 0 && diff > -1;      // last month
-        return isLastMonth;
-    }
+  if (film.watchDate) {
+    const diff = dayjs(film.watchDate).diff(dayjs(), 'month');
+    return diff <= 0 && diff > -1;
+  }
 };
 
 function mapRowsToFilms(rows) {
-    // Note: the parameters must follow the same order specified in the constructor.
-    return rows.map(row => new Film(row.id, row.title, row.isFavorite === 1, row.watchDate, row.rating, row.userId));
+  return rows.map(row =>
+    new Film(
+      row.id,
+      row.title,
+      row.isfavorite === true,
+      row.watchdate,
+      row.rating,
+      row.userid
+    )
+  );
 }
 
-
-// NOTE: all functions return error messages as json object { error: <string> } 
 export default function FilmDao() {
 
-    // This function retrieves the whole list of films from the database.
-    this.getFilms = (userId, filter) => {
-        return new Promise((resolve, reject) => {
-            // only films belonging to the user are retrieved
-            const query = 'SELECT * FROM films WHERE userId=?';
-            db.all(query, [userId], (err, rows) => {
-                if (err) {
-                    reject(err);
-                } else {
-                    const films = mapRowsToFilms(rows);
+  // GET all films
+  this.getFilms = async (userId, filter) => {
+    const result = await pool.query(
+      "SELECT * FROM films WHERE userId=$1",
+      [userId]
+    );
 
-                    if (filters.hasOwnProperty(filter))
-                        resolve(films.filter(filters[filter].filterFunction));
-                    else  // if an invalid filter is specified, all the films are returned.
-                        resolve(films);
-                }
-            });
-        });
-    };
+    const films = mapRowsToFilms(result.rows);
 
-    // This function retrieves a film given its id and the associated user id.
-    this.getFilm = (userId, id) => {
-        return new Promise((resolve, reject) => {
-            const query = 'SELECT * FROM films WHERE id=? AND userId=?';
-            db.get(query, [id, userId], (err, row) => {
-                if (err) {
-                    reject(err);
-                }
-                if (row === undefined) {
-                    resolve({error: 'Film not found.'});
-                } else {
-                    resolve(mapRowsToFilms([row])[0]);
-                }
-            });
-        });
-    };
+    if (filters.hasOwnProperty(filter))
+      return films.filter(filters[filter].filterFunction);
+    else
+      return films;
+  };
 
 
-    /**
-     * This function adds a new film in the database.
-     * The film id is added automatically by the DB, and it is returned as this.lastID.
-     */
-    this.addFilm = (film) => {
-        return new Promise((resolve, reject) => {
-            const query = 'INSERT INTO films (title, isFavorite, rating, watchDate, userId) VALUES(?, ?, ?, ?, ?)';
-            const watchDate = film.watchDate ? film.watchDate.format("YYYY-MM-DD") : null;
-            let rating;
-            if (!film.rating || film.rating < 1 || film.rating > 5)
-                rating = null;
-            else
-                rating = film.rating;
+  // GET film by id
+  this.getFilm = async (userId, id) => {
+    const result = await pool.query(
+      "SELECT * FROM films WHERE id=$1 AND userId=$2",
+      [id, userId]
+    );
 
-            db.run(query, [film.title, film.favorite, rating, watchDate, film.userId], function (err) {
-                if (err) {
-                    reject(err);
-                }
-                film.id = this.lastID;
-                resolve(film);
-            });
-        });
-    };
+    if (result.rows.length === 0)
+      return { error: "Film not found." };
 
-    // This function updates an existing film given its id and the new properties.
-    this.updateFilm = (userId, id, film) => {
-        return new Promise((resolve, reject) => {
-            const query = 'UPDATE films SET title = ?, isFavorite = ?, rating = ?, watchDate = ? WHERE id = ? AND userId = ?';
-            const watchDate = film.watchDate ? film.watchDate.format("YYYY-MM-DD") : null;
-            let rating;
-            if (!film.rating || film.rating < 1 || film.rating > 5)
-                rating = null;
-            else
-                rating = film.rating;
+    return mapRowsToFilms(result.rows)[0];
+  };
 
-            db.run(query, [film.title, film.favorite, rating, watchDate, id, userId], function (err) {
-                if (err) {
-                    reject(err);
-                }
-                if (this.changes !== 1) {
-                    resolve({error: 'Film not found.'});
-                } else {
-                    resolve(film);
-                }
-            });
-        });
-    };
 
-    // This function deletes an existing film given its id.
-    this.deleteFilm = (userId, id) => {
-        return new Promise((resolve, reject) => {
-            const query = 'DELETE FROM films WHERE id = ? AND userId = ?';
-            db.run(query, [id, userId], function (err) {
-                if (err) {
-                    reject(err);
-                } else
-                    resolve(this.changes);
-            });
-        });
-    };
+  // INSERT film
+  this.addFilm = async (film) => {
+
+    const watchDate = film.watchDate
+      ? film.watchDate.format("YYYY-MM-DD")
+      : null;
+
+    let rating = null;
+    if (film.rating && film.rating >= 1 && film.rating <= 5)
+      rating = film.rating;
+
+    const result = await pool.query(
+      `INSERT INTO films (title, isFavorite, rating, watchDate, userId)
+       VALUES ($1,$2,$3,$4,$5)
+       RETURNING id`,
+      [film.title, film.favorite, rating, watchDate, film.userId]
+    );
+
+    film.id = result.rows[0].id;
+    return film;
+  };
+
+
+  // UPDATE film
+  this.updateFilm = async (userId, id, film) => {
+
+    const watchDate = film.watchDate
+      ? film.watchDate.format("YYYY-MM-DD")
+      : null;
+
+    let rating = null;
+    if (film.rating && film.rating >= 1 && film.rating <= 5)
+      rating = film.rating;
+
+    const result = await pool.query(
+      `UPDATE films
+       SET title=$1, isFavorite=$2, rating=$3, watchDate=$4
+       WHERE id=$5 AND userId=$6`,
+      [film.title, film.favorite, rating, watchDate, id, userId]
+    );
+
+    if (result.rowCount === 0)
+      return { error: "Film not found." };
+
+    return film;
+  };
+
+
+  // DELETE film
+  this.deleteFilm = async (userId, id) => {
+
+    const result = await pool.query(
+      "DELETE FROM films WHERE id=$1 AND userId=$2",
+      [id, userId]
+    );
+
+    return result.rowCount;
+  };
 
 }

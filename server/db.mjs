@@ -1,11 +1,14 @@
-/** DB access module **/
+import pkg from "pg";
+const { Pool } = pkg;
 
-import sqlite3 from "sqlite3";
-
-// Opening the database
-// NOTE: if you are running the solution from the root folder this path should be: `./lab03-express/solution/films.db`
-const db = new sqlite3.Database('films.db', (err) => {
-    if (err) throw err;
+// Use environment variables from Render
+const pool = new Pool({
+  host: process.env.DB_HOST,       // e.g., db-postgresql-xyz.render.com
+  port: process.env.DB_PORT,       // usually 5432
+  database: process.env.DB_NAME,   // your database name
+  user: process.env.DB_USER,       // your database user
+  password: process.env.DB_PASS,   // your database password
+  ssl: { rejectUnauthorized: false }  // required on Render
 });
 
-export default db;
+export default pool;
