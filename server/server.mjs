@@ -16,13 +16,36 @@ app.use(morgan('dev'));
 app.use(express.json());
 
 
-/** Set up and enable Cross-Origin Resource Sharing (CORS) **/
-const corsOptions = {
-    origin: 'http://localhost:5173',
+const allowedOrigins = [
+    "http://localhost:5173",
+    "https://film-library-one.vercel.app"
+  ];
+  
+  app.use(cors({
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true
-};
-app.use(cors(corsOptions));
+  }));
 
+  app.options("*", cors());
+
+/** Creating the session */
+import session from 'express-session';
+
+app.use(session({
+    secret: "This is a very secret information used to initialize the session!",
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      sameSite: "none",
+      secure: true
+    }
+  }));
 
 /*** Passport ***/
 
@@ -53,17 +76,6 @@ passport.deserializeUser(function (user, callback) { // this user is id + email 
     // In this method, if needed, we can do extra check here (e.g., double check that the user is still in the database, etc.)
     // e.g.: return userDao.getUserById(id).then(user => callback(null, user)).catch(err => callback(err, null));
 });
-
-
-/** Creating the session */
-import session from 'express-session';
-
-app.use(session({
-  secret: "This is a very secret information used to initialize the session!",
-  resave: false,
-  saveUninitialized: false,
-}));
-app.use(passport.authenticate('session'));
 
 
 /** Defining authentication verification middleware **/
@@ -297,5 +309,10 @@ app.delete('/api/films/:id', isLoggedIn,
 
 
 // Activating the server
-const PORT = 3001;
+const PORT = process.env.PORT || 3000;
+
+app.get("/", (req, res) => {
+    res.send("API running");
+});
+
 app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}/`));

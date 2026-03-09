@@ -1,6 +1,6 @@
 import Film from "./models/Film.js";
 
-const SERVER_URL = 'http://localhost:3001/api';
+const SERVER_URL = 'https://film-library-25b6.onrender.com/api';
 
 /**
  * This function wants username and password inside a "credentials" object.
