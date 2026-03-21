@@ -40,8 +40,12 @@ const allowedOrigins = [
 /** Creating the session */
 import session from 'express-session';
 
+if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET environment variable is not set. Refusing to start.");
+  }
+
 app.use(session({
-    secret: process.env.SESSION_SECRET || "supersecret",
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: {
@@ -118,16 +122,6 @@ const filmValidation = [
 
 
 /*** Users APIs ***/
-
-app.get("/api/testdb", async (req, res) => {
-    try {
-      const result = await pool.query("SELECT NOW()");
-      res.json(result.rows);
-    } catch (err) {
-      console.error(err);
-      res.status(500).json(err);
-    }
-  });
 
 // POST /api/sessions
 // This route is used for performing login.
