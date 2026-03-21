@@ -22,7 +22,7 @@ function mapRowsToFilms(rows) {
       row.id,
       row.title,
       row.isfavorite === true,
-      row.watchdate,
+      row.watchdate ? row.watchdate.toISOString().slice(0, 10) : null,
       row.rating,
       row.userid
     )
@@ -34,7 +34,7 @@ export default function FilmDao() {
   // GET all films
   this.getFilms = async (userId, filter) => {
     const result = await pool.query(
-      "SELECT * FROM films WHERE userId=$1",
+      "SELECT * FROM films WHERE userId=$1 ORDER BY id",
       [userId]
     );
 

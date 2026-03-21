@@ -44,14 +44,23 @@ function App() {
         setFeedback(message); // Assuming only one error message at a time
     };
 
-    // This state contains the list of movie. It will be updated when a movie is modified or a new movie is added.
     const [films, setFilms] = useState([]);
     const [loading, setLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
 
-    // This state is used to force a refresh of the film list
-    // Using null as initial state as we need to fetch even when the 1st load happens on create/edit pages
-    const [shouldRefresh, setShouldRefresh] = useState(true);
+    const refreshFilms = (label = filterLabel) => {
+        if (label === null) return;
+        setLoading(true);
+        API.getFilms(label || false)
+            .then(films => setFilms(films))
+            .catch(e => setFeedbackFromError(e))
+            .finally(() => setLoading(false));
+    };
+
+    // Optimistically update a single film in local state, avoiding a full re-fetch
+    const updateFilmInState = (updatedFilm) => {
+        setFilms(prev => prev.map(f => f.id === updatedFilm.id ? updatedFilm : f));
+    };
 
     const {pathname, state} = useLocation();
     const background = state?.background;
@@ -101,20 +110,8 @@ function App() {
     };
 
     useEffect(() => {
-        if(filterLabel === null) return;
-
-        setLoading(true);
-
-        API.getFilms(filterLabel)
-            .then(films => {
-                setFilms(films);
-            })
-            .catch(e => setFeedbackFromError(e))
-            .finally(() => {
-            setLoading(false);
-            setShouldRefresh(false);
-            });
-    }, [shouldRefresh, filterLabel]);
+        refreshFilms();
+    }, [filterLabel]);
 
     const filteredFilms = films.filter(film => {
         if (!searchQuery.trim()) return true;
@@ -122,7 +119,7 @@ function App() {
       });
 
     return (
-        <FeedbackContext.Provider value={{setFeedback, setFeedbackFromError, setShouldRefresh}}>
+        <FeedbackContext.Provider value={{setFeedback, setFeedbackFromError, refreshFilms, updateFilmInState}}>
             <div className="min-vh-100 d-flex flex-column">
                 <Header isSidebarExpanded={isSidebarExpanded} setIsSidebarExpanded={setIsSidebarExpanded}
                     logout={handleLogout} user={user} loggedIn={loggedIn} searchQuery={searchQuery} setSearchQuery={setSearchQuery}/>
@@ -139,7 +136,7 @@ function App() {
                             <Route path="*" element={<NotFoundLayout/>}/>
                             <Route index element={
                                 !loggedIn ? <Navigate replace to='/login' />
-                                : <FilmListLayout films={filteredFilms} filters={filters}/>}/>
+                                : <FilmListLayout films={filteredFilms} filters={filters} loading={loading}/>}/>
                             <Route path="filters/:filterLabel" element={
                                 !loggedIn ? <Navigate replace to='/login' />
                                 : <FilmListLayout films={filteredFilms} filters={filters} loading={loading}/>}/>
@@ -152,7 +149,7 @@ function App() {
                     {background && (
                         <Routes>
                             <Route path="/add" element={<CreateLayout />} />
-                            <Route path="/edit/:filmId" element={<EditLayout films={filteredFilms} />} />
+                            <Route path="/edit/:filmId" element={<EditLayout films={films} />} />
                         </Routes>
                     )}
                     <Toast

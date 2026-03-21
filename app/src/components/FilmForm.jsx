@@ -1,8 +1,10 @@
 import dayjs from 'dayjs';
+import customParseFormat from 'dayjs/plugin/customParseFormat.js';
+dayjs.extend(customParseFormat);
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Form, Button, Collapse } from 'react-bootstrap';
-import { Film } from '../films.mjs';
+import Film from '../models/Film.js';
 
 const FilmForm = ({ film, onSubmit, isOpen, cancel}) => {
   const [errors, setErrors] = useState([]);
@@ -11,15 +13,15 @@ const FilmForm = ({ film, onSubmit, isOpen, cancel}) => {
   const [title, setTitle] = useState(film ? film.title : '');
   const [favorite, setFavorite] = useState(film ? film.favorite : false);
   const [watchDate, setWatchDate] = useState((film && film.watchDate) ? film.watchDate.format('YYYY-MM-DD') : "");
-  const [rating, setRating] = useState(film && film.rating ? film.rating : 0);
+  const [rating, setRating] = useState(film && film.rating ? film.rating : null);
 
   const validate = () => {
     const errs = [];
     if (!title.trim()) errs.push('Title cannot be empty');
-    if (watchDate && dayjs(watchDate).isAfter(dayjs()))
+    if (watchDate && dayjs(watchDate, 'YYYY-MM-DD').isAfter(dayjs()))
       errs.push('Watch date cannot be in the future');
-    if (rating !== '' && (rating < 0 || rating > 5))
-      errs.push('Rating must be between 0 and 5');
+    if (rating !== null && (rating < 1 || rating > 5))
+      errs.push('Rating must be between 1 and 5 (or left empty for unrated)');
     return errs;
   };
 
@@ -37,7 +39,7 @@ const FilmForm = ({ film, onSubmit, isOpen, cancel}) => {
       title.trim(),
       favorite,
       watchDate || null,
-      rating === '' ? null : rating
+      rating !== null ? Number(rating) : null
     );
 
     if(film) newFilm.id = film.id
@@ -90,13 +92,14 @@ const FilmForm = ({ film, onSubmit, isOpen, cancel}) => {
               </Form.Group>
 
               <Form.Group className="mb-3">
-                <Form.Label>Rating (0–5)</Form.Label>
+                <Form.Label>Rating (1–5, leave empty for unrated)</Form.Label>
                 <Form.Control
                   type="number"
-                  min={0}
+                  min={1}
                   max={5}
-                  value={rating}
-                  onChange={e => setRating(e.target.value)}
+                  value={rating ?? ''}
+                  placeholder="Unrated"
+                  onChange={e => setRating(e.target.value === '' ? null : Number(e.target.value))}
                 />
               </Form.Group>
 

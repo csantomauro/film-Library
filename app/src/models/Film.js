@@ -1,13 +1,11 @@
 import dayjs from "dayjs";
 
-// This is the same model developed for lab 1.
 export default function Film(id, title, isFavorite = false, watchDate = null, rating = null, userId = 1) {
     this.id = id;
     this.title = title;
     this.favorite = isFavorite;
     this.rating = rating;
-    // saved as dayjs object only if watchDate is truthy
-    this.watchDate = watchDate && dayjs(watchDate);
+    this.watchDate = watchDate ? dayjs(watchDate, 'YYYY-MM-DD') : null;
     this.userId = userId
 
     this.toString = () => {

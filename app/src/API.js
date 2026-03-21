@@ -100,8 +100,11 @@ async function deleteFilm(filmId) {
     }).then(handleInvalidResponse)
 }
 
-function handleInvalidResponse(response) {
-    if (!response.ok) { throw Error(response.statusText) }
+async function handleInvalidResponse(response) {
+    if (!response.ok) {
+        const body = await response.json().catch(() => ({}));
+        throw new Error(body.error || response.statusText || 'Unknown error');
+    }
     let type = response.headers.get('Content-Type');
     if (type !== null && type.indexOf('application/json') === -1){
         throw new TypeError(`Expected JSON, got ${type}`)

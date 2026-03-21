@@ -33,23 +33,23 @@ export function FilmListLayout(props) {
     const filterName = props.filters[filterLabel] ? props.filters[filterLabel].label : 'All';
 
     const location = useLocation();
-    const {setFeedbackFromError, setShouldRefresh} = useContext(FeedbackContext);
+    const {setFeedbackFromError, refreshFilms, updateFilmInState} = useContext(FeedbackContext);
 
     const onDelete = (filmId) => {
         API.deleteFilm(filmId)
-            .then(() => setShouldRefresh(true))
+            .then(() => refreshFilms())
             .catch(e => setFeedbackFromError(e));
     };
 
     const onUpdateFavorite = (filmId, nextFavorite) => {
         API.updateFilmFavorite(filmId, nextFavorite)
-            .then(() => setShouldRefresh(true))
+            .then(() => updateFilmInState({ ...props.films.find(f => f.id === filmId), favorite: nextFavorite }))
             .catch(e => setFeedbackFromError(e));
     }
 
     const onUpdateRating = (filmId, nextRating) => {
         API.updateFilmRating(filmId, nextRating)
-            .then(() => setShouldRefresh(true))
+            .then(() => updateFilmInState({ ...props.films.find(f => f.id === filmId), rating: nextRating }))
             .catch(e => setFeedbackFromError(e));
     }
 
@@ -89,13 +89,11 @@ export function EditLayout(props) {
     const {filmId} = useParams();
     const editableFilm = props.films && props.films.find(f => f.id === Number(filmId));
 
-    const {setFeedbackFromError, setShouldRefresh} = useContext(FeedbackContext);
+    const {setFeedbackFromError, updateFilmInState} = useContext(FeedbackContext);
 
     const updateFilm = (film) => {
-        if(film.rating < 1) film.rating = null;
-        if(film.watchDate === '') film.watchDate = null;
         return API.updateFilm(film)
-            .then(() => setShouldRefresh(true))
+            .then(() => updateFilmInState(film))
             .catch(e => setFeedbackFromError(e));
     };
 
@@ -115,15 +113,12 @@ export function EditLayout(props) {
 
 export function CreateLayout() {
     const navigate = useNavigate();
-    const {setFeedbackFromError, setShouldRefresh} = useContext(FeedbackContext);
+    const {setFeedbackFromError, refreshFilms} = useContext(FeedbackContext);
     const [isOpen, setIsOpen] = useState(true);
 
     const addFilm = (film) => {
-        if(film.rating < 1) film.rating = null;
-        if(film.watchDate === '') film.watchDate = null;
-
         return API.addFilm(film)
-            .then(() => setShouldRefresh(true))
+            .then(() => refreshFilms())
             .catch(e => setFeedbackFromError(e));
     };
 
