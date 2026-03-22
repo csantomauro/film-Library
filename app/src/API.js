@@ -1,7 +1,8 @@
 import Film from "./models/Film.js";
 
-const SERVER_URL = 'https://film-library-25b6.onrender.com/api';
-//const SERVER_URL = 'http://localhost:3000/api';
+const SERVER_URL = import.meta.env.PROD
+    ? 'https://film-library-25b6.onrender.com/api'
+    : 'http://localhost:3000/api';
 
 /**
  * This function wants username and password inside a "credentials" object.

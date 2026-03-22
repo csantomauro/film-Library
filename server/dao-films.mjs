@@ -64,9 +64,7 @@ export default function FilmDao() {
   // INSERT film
   this.addFilm = async (film) => {
 
-    const watchDate = film.watchDate
-      ? film.watchDate.format("YYYY-MM-DD")
-      : null;
+    const watchDate = film.watchDate || null;
 
     let rating = null;
     if (film.rating && film.rating >= 1 && film.rating <= 5)
@@ -87,9 +85,7 @@ export default function FilmDao() {
   // UPDATE film
   this.updateFilm = async (userId, id, film) => {
 
-    const watchDate = film.watchDate
-      ? film.watchDate.format("YYYY-MM-DD")
-      : null;
+    const watchDate = film.watchDate || null;
 
     let rating = null;
     if (film.rating && film.rating >= 1 && film.rating <= 5)

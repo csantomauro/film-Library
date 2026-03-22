@@ -7,13 +7,11 @@ export default function Film(id, title, isFavorite = false, watchDate = null, ra
     this.rating = rating;
     this.watchDate = watchDate ? dayjs(watchDate).format('YYYY-MM-DD') : null;
     this.userId = userId;
- 
-    this.toString = () => {
-        return `Id: ${this.id}, Title: ${this.title}, Favorite: ${this.favorite}, ` +
-            `Watch date: ${this.watchDate}, Score: ${this.rating}, User: ${this.userId}`;
-    };
- 
-    this.formatWatchDate = (format = 'MMMM D, YYYY') => {
-        return this.watchDate ? dayjs(this.watchDate).format(format) : undefined;
+
+    this.toJSON = () => {
+        return {
+            ...this,
+            watchDate: this.watchDate ?? null,
+        };
     };
 }
