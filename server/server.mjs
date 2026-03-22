@@ -1,4 +1,5 @@
 /*** Importing modules ***/
+import 'dotenv/config';
 import express from 'express';
 import morgan from 'morgan'; // logging middleware
 import cors from 'cors'; // CORS middleware
@@ -50,8 +51,8 @@ app.use(session({
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: true,
-      sameSite: 'none',
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
       maxAge: 24*60*60*1000
     }
   }));
@@ -116,7 +117,7 @@ const errorFormatter = ({msg}) => {
 const filmValidation = [
     check('title').isString().notEmpty(),
     check('favorite').isBoolean().optional(),
-    check('watchDate').optional({nullable: true}).isISO8601({strict: true}).toDate(),  // valid ISO date, without time
+    check('watchDate').optional({nullable: true}).isISO8601({strict: true}).toDate(),
     check('rating').optional({nullable: true}).isInt({min: 1, max: 5}),
 ];
 

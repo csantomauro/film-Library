@@ -1,6 +1,4 @@
 import dayjs from 'dayjs';
-import customParseFormat from 'dayjs/plugin/customParseFormat.js';
-dayjs.extend(customParseFormat);
 import { useState } from 'react';
 import PropTypes from 'prop-types';
 import { Modal, Form, Button, Collapse } from 'react-bootstrap';
@@ -12,7 +10,7 @@ const FilmForm = ({ film, onSubmit, isOpen, cancel}) => {
 
   const [title, setTitle] = useState(film ? film.title : '');
   const [favorite, setFavorite] = useState(film ? film.favorite : false);
-  const [watchDate, setWatchDate] = useState((film && film.watchDate) ? film.watchDate.format('YYYY-MM-DD') : "");
+  const [watchDate, setWatchDate] = useState((film && film.watchDate) ? film.watchDate : "");
   const [rating, setRating] = useState(film && film.rating ? film.rating : null);
 
   const validate = () => {

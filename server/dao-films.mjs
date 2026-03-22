@@ -22,7 +22,7 @@ function mapRowsToFilms(rows) {
       row.id,
       row.title,
       row.isfavorite === true,
-      row.watchdate ? row.watchdate.toISOString().slice(0, 10) : null,
+      row.watchdate,
       row.rating,
       row.userid
     )
