@@ -44,7 +44,7 @@ function LoginForm(props) {
             <Form.Label>email</Form.Label>
             <Form.Control
               type="email"
-              value={username} placeholder="Example: john.doe@polito.it"
+              value={username} placeholder="Example: admin@test.com"
               onChange={(ev) => setUsername(ev.target.value)}
               required={true}
             />
