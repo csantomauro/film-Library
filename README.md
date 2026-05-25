@@ -85,12 +85,16 @@ node server.mjs
 ### Frontend
 
 ```bash
-cd client
+cd app
 npm install
 npm run dev
 ```
 
 The app will be available at `http://localhost:5173`. Make sure the `SERVER_URL` in `API.js` points to `http://localhost:3000/api` for local development.
+
+## Test credentials
+- **Email:** user@filmLibrary.com
+- **Password:** password
 
 ### Database schema
 

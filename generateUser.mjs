@@ -8,6 +8,6 @@ crypto.scrypt(password, salt, 32, (err, derivedKey) => {
 
   console.log(`
 INSERT INTO users (email, name, hash, salt)
-VALUES ('admin','Admin','${hash}','${salt}');
+VALUES ('user@filmLibrary.com','Mario Rossi','${hash}','${salt}');
 `);
 });
